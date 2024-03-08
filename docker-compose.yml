@@ -1,0 +1,55 @@
+version: '3.9'
+
+networks:
+  proxy:
+    external: true
+
+services:
+  traefik:
+    image: traefik:latest
+    ports:
+      - published: 80
+        target: 80
+        protocol: tcp
+        mode: host
+      - published: 443
+        target: 443
+        protocol: tcp
+        mode: host
+    networks:
+      - proxy
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./acme:/acme
+    command:
+      --providers.docker=true
+      --providers.docker.network=proxy
+      --providers.docker.exposedByDefault=false
+      --entryPoints.web.address=:80
+      --entryPoints.web.http.redirections.entryPoint.to=websecure
+      --entryPoints.web.http.redirections.entryPoint.scheme=https
+      --entryPoints.websecure.address=:443
+      --entryPoints.websecure.http.tls=true
+      --api.debug=true
+      --api.dashboard=true
+      --log.level=DEBUG
+      --accesslog=trueg
+      --certificatesResolvers.myresolver.acme.email=maicon@kamico.com.br
+      --certificatesResolvers.myresolver.acme.tlschallenge=true
+      --certificatesResolvers.myresolver.acme.storage=/acme/acme.json
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.mydashboard.entrypoints=websecure
+      - traefik.http.routers.mydashboard.rule=Host(`traefik.kamico.com.br`)
+      - traefik.http.routers.mydashboard.tls.certresolver=myresolver
+      - traefik.http.routers.mydashboard.service=api@internal
+      - traefik.http.routers.mydashboard.middlewares=myauth
+      - "traefik.http.middlewares.myauth.basicauth.users=${BASIC_AUTH_USER}"
+      - traefik.http.routers.unmatchedwww.rule=HostRegexp(`{name:^www\..*}`) 
+      - traefik.http.routers.unmatchedwww.service=noop@internal
+      - traefik.http.routers.unmatchedwww.priority=2
+      - traefik.http.routers.matchlast.rule=PathPrefix(`/`)
+      - traefik.http.routers.matchlast.priority=1
+      - traefik.http.routers.matchlast.middlewares=addwww
+      - traefik.http.middlewares.addwww.redirectregex.regex=^https://(?:www\.)?(.*)
+      - traefik.http.middlewares.addwww.redirectregex.replacement=https://www.$$1
