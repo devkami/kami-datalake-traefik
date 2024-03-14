@@ -34,13 +34,13 @@ services:
       --api.dashboard=true
       --log.level=DEBUG
       --accesslog=trueg
-      --certificatesResolvers.myresolver.acme.email=maicon@kamico.com.br
+      --certificatesResolvers.myresolver.acme.email=dev@kamico.com.br
       --certificatesResolvers.myresolver.acme.tlschallenge=true
       --certificatesResolvers.myresolver.acme.storage=/acme/acme.json
     labels:
       - traefik.enable=true
       - traefik.http.routers.mydashboard.entrypoints=websecure
-      - traefik.http.routers.mydashboard.rule=Host(`traefik.kamico.com.br`)
+      - traefik.http.routers.mydashboard.rule=Host(`traefik.aws.kamico.com.br`)
       - traefik.http.routers.mydashboard.tls.certresolver=myresolver
       - traefik.http.routers.mydashboard.service=api@internal
       - traefik.http.routers.mydashboard.middlewares=myauth
